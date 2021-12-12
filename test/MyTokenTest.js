@@ -1,4 +1,5 @@
 const Token = artifacts.require("MyToken");
+require("dotenv").config({path: "../.env"})
 
 var chai = require("chai");
 const BN = web3.utils.BN;
@@ -15,7 +16,7 @@ contract("Token Test", async (accounts) => {
     const [deployerAccount, recipientAccount, anotherAccount] = accounts;
 
     beforeEach(async() => {
-        this.myToken = await Token.new(1000000);
+        this.myToken = await Token.new(process.env.INITIAL_SUPPLY);
     });
 
     it("all tokens should be in my account", async () => {
