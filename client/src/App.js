@@ -8,7 +8,7 @@ import KycContract from "./contracts/KycContract.json"
 import "./App.css";
 
 class App extends Component {
-  state = { loaded:false, kycAddress: "0x123..."};
+  state = { loaded:false, kycAddress: "0x123...", tokenSaleAddress: null, userTokens: 0 };
 
   getContract = async (solidityContract) => {
     return new this.web3.eth.Contract(
@@ -34,7 +34,11 @@ class App extends Component {
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ loaded:true });
+      this.listenToTokenTransfer();
+      this.setState(
+        { loaded:true, tokenSaleAddress: MyTokenSale.networks[this.networkId].address },
+        this.updateUserTokens
+      );
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -58,6 +62,22 @@ class App extends Component {
     alert("KYC for "+this.state.kycAddress+" Completed");
   }
 
+  updateUserTokens = async() => {
+    let userTokens = await this.myToken.methods.balanceOf(this.accounts[0]).call();
+    this.setState({userTokens: userTokens});
+  }
+
+  listenToTokenTransfer = () => {
+    this.myToken.events.Transfer({to: this.accounts[0]}).on("data", this.updateUserTokens)
+  }
+
+  handleBuyTokens = async() => {
+    await this.myTokenSale.methods.buyTokens(this.accounts[0]).send({
+      from: this.accounts[0],
+      value: 1
+    });
+  }
+
   render() {
     if (!this.state.loaded) {
       return <div>Loading Web3, accounts, and contract...</div>;
@@ -69,6 +89,10 @@ class App extends Component {
         <h2>Kyc WhiteListing</h2>
         Address to allow: <input type="text" name="kycAddress" value={this.state.kycAddress} onChange={this.handleInputChange} />
         <button type="button" onClick={this.handleWhiteListing}>Add to WhiteList</button>
+        <h2>Buy tokens</h2>
+        <p>If you want to buy tokens, send Ethers to this address: {this.state.tokenSaleAddress}</p>
+        <p>You currently have: {this.state.userTokens} FTR Tokens</p>
+        <button type="button" onClick={this.handleBuyTokens}>Buy more tokens</button>
       </div>
     );
   }
